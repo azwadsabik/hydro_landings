@@ -1,0 +1,38 @@
+<launch>
+	<arg name="simulation" default="true"/>
+	<arg name="target" default="12"/>
+	
+	<param name="/target_marker_id" value="$(arg target)" type="int"/>
+	
+    <arg name="marker_size" default="15.24"/> <!--<1>-->
+	<arg name="max_new_marker_error" default="0.2"/>
+	<arg name="max_track_error" default="0.8"/>
+	<arg name="cam_image_topic" default="/ardrone/bottom/image_raw"/>
+	<arg name="cam_info_topic" default="/ardrone/bottom/camera_info"/>
+	
+
+	<arg name="output_frame" default="/base_link" if="$(arg simulation)"/>	
+	<group if="$(arg simulation)">
+		<include file="$(find hydro_landings)/launch/quadrotor_simulation.launch"/>
+		<param name="/quadrotor_base" value="/base_link"/>
+		<param name="/cage_x" value="20" type="int"/>
+		<param name="/cage_y" value="10" type="int"/>
+	</group>
+
+	<arg name="output_frame" default="/ardrone_base_link" unless="$(arg simulation)"/>	
+	<group unless="$(arg simulation)">
+		<include file="$(find ardrone_autonomy)/launch/ardrone.launch"/>
+		<param name="/quadrotor_base" value="/ardrone_base_link"/>
+		<param name="/cage_x" value="18" type="int"/>
+		<param name="/cage_y" value="8" type="int"/>
+	</group>
+	
+	<node name="joystick" pkg="joy" type="joy_node"/>
+	<node name="joy2drone" pkg="ardrone_joystick" type="ardrone_teleop"/>
+	
+	<node name="ar_track_alvar" pkg="ar_track_alvar"
+		type="individualMarkersNoKinect" respawn="false" output="screen" 
+		args="$(arg marker_size) $(arg max_new_marker_error) $(arg max_track_error) $(arg cam_image_topic) $(arg cam_info_topic) $(arg output_frame)" />
+	<node name="pose_estimator" pkg="hydro_landings" type="drone_pose_estimator.py"/>
+	
+</launch>

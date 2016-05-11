@@ -1,0 +1,35 @@
+@{PLANE_WIDTH = 10.0*0.3048*100}
+@{PLANE_LENGTH = 20.0*0.3048*100}
+@{FIDUCIAL_SIZE = 40}
+@{FIDUCIAL_Y = [
+	+1*PLANE_WIDTH/6,
+	+3*PLANE_WIDTH/6,
+	+5*PLANE_WIDTH/6
+]}
+@{FIDUCIAL_X = [
+	-3*PLANE_LENGTH/8,
+	-1*PLANE_LENGTH/8,
+	+1*PLANE_LENGTH/8,
+	+3*PLANE_LENGTH/8
+]}
+
+@{F = FIDUCIAL_SIZE}
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<multimarker markers="@(len(FIDUCIAL_X)*len(FIDUCIAL_Y))">
+	@[def marker(n, x, y)]
+	<marker index="@(n)" status="2">
+		<corner x="@(x - F/2)" y="@(y - F/2)" z="0.0" />
+		<corner x="@(x + F/2)" y="@(y - F/2)" z="0.0" />
+		<corner x="@(x + F/2)" y="@(y + F/2)" z="0.0" />
+		<corner x="@(x - F/2)" y="@(y + F/2)" z="0.0" />
+	</marker>
+	@[end def]
+
+	@{n_markers = 0}
+	@[for x in FIDUCIAL_X]
+	@[for y in FIDUCIAL_Y]
+	@( marker(n_markers, x, y) )
+	@{n_markers += 1}
+	@[end for]
+	@[end for]
+</multimarker>

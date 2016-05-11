@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:include filename="$(find hydro_landings)/urdf/sensors/quadrotor_plugins.urdf.xacro" />
+  <property name="pi" value="3.1415926535897931" />
+
+  <!-- Main quadrotor link -->
+  <xacro:macro name="quadrotor_base_macro">
+    <link name="base_link">
+      <inertial>
+        <mass value="1.477" />
+        <origin xyz="0 0 0" />
+        <inertia ixx="0.01152" ixy="0.0" ixz="0.0" iyy="0.01152" iyz="0.0" izz="0.0218" />
+      </inertial>
+
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="package://hydro_landings/meshes/quadrotor.dae"/>
+        </geometry>
+      </visual>
+
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="package://hydro_landings/meshes/quadrotor.stl"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <!-- Gazebo Plugins -->
+    <quadrotor_plugins/>
+  </xacro:macro>
+</robot>

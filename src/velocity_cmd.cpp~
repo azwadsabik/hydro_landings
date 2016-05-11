@@ -1,0 +1,109 @@
+#include <iostream>
+#include <ros/ros.h>
+#include <geometry_msgs/Twist.h>
+#include <eigen3/Eigen/Core>
+#include <tf/tf.h>
+#include <tf/transform_listener.h>
+#include <std_msgs/Bool.h>
+
+using namespace std;
+
+geometry_msgs::Pose goal;
+std_msgs::Bool goal_reached;
+float P = 5;
+float e_max = 0.05;
+
+geometry_msgs::Twist calculateVelocity(const tf::StampedTransform& robot_in_world)
+{
+  geometry_msgs::Twist velocity;
+  tf::Matrix3x3 world_in_robot_rotation = robot_in_world.getBasis().inverse();
+  tf::Vector3 robot_in_world_position = robot_in_world.getOrigin();  
+  tf::Vector3 goal_in_world_position(goal.position.x, goal.position.y, goal.position.z);
+ 
+  cout << "Location of robot is ";
+  cout << robot_in_world_position.getX() << ", ";
+  cout << robot_in_world_position.getY() << ", ";
+  cout << robot_in_world_position.getZ() << endl;
+  cout << "Location of goal is ";
+  cout << goal_in_world_position.getX() << ", ";
+  cout << goal_in_world_position.getY() << ", ";
+  cout << goal_in_world_position.getZ() << endl;  
+
+  tf::Vector3 error = goal_in_world_position - robot_in_world_position;
+  float e = error.length();
+
+  cout << "Distance to target is " << e << endl;
+
+  tf::Vector3 velocity_in_world(P*error.x(), P*error.y(), P*error.z());
+  tf::Vector3 velocity_in_robot = world_in_robot_rotation*velocity_in_world;
+  
+  velocity.linear.x = velocity_in_robot.x();
+  velocity.linear.y = velocity_in_robot.y();
+  velocity.linear.z = velocity_in_robot.z();
+  velocity.angular.x = 0;
+  velocity.angular.y = 0;
+  velocity.angular.z = 0;
+
+  if(e < e_max){  
+    goal_reached.data = true;
+  }
+  else{
+    goal_reached.data = false;
+  }
+  
+  return velocity;
+}
+
+bool unequal_poses(const geometry_msgs::Pose& a, const geometry_msgs::Pose& b){
+  bool unequal = false;
+  unequal = (a.position.x != b.position.x);
+  unequal = (a.position.y != b.position.y);
+  unequal = (a.position.z != b.position.z);
+  return unequal;
+}
+
+void goalCallBack(const geometry_msgs::Pose& new_goal)
+{
+  if (unequal_poses(goal, new_goal)){
+	  cout << "Goal was updated!" << endl;
+	  goal_reached.data = false;
+  }
+  goal = new_goal;
+}
+
+int main(int argc, char** argv)
+{
+  ros::init(argc, argv, "velocity_cmd");
+  
+  ros::NodeHandle node;
+
+  tf::TransformListener robot_pose_estimator;
+  goal.position.z = 2.0;
+  ros::Subscriber goal_sub = node.subscribe("goal", 1000, goalCallBack); 
+  ros::Publisher velocity_pub = node.advertise<geometry_msgs::Twist>("cmd_vel", 1000); 
+  ros::Publisher goal_reached_pub = node.advertise<std_msgs::Bool>("goal_reached", 1000); 
+
+  ros::Rate rate(30.0);
+
+  while(node.ok()){
+    tf::StampedTransform robot_in_world;
+    try{
+      robot_pose_estimator.lookupTransform("/world","/base_link",ros::Time(),robot_in_world);
+      cout << "Detected Transform" << endl;
+    }
+    catch(tf::TransformException ex){
+      ROS_ERROR("%s",ex.what());
+      ros::Duration(1.0).sleep();
+      cout << "No Transform Found" << endl;
+    }
+
+	ros::spinOnce();
+	
+    geometry_msgs::Twist command_velocity = calculateVelocity(robot_in_world);
+    velocity_pub.publish(command_velocity);
+    goal_reached_pub.publish(goal_reached);
+    
+    rate.sleep();
+  }
+  return 0;
+};

@@ -1,0 +1,4 @@
+<launch>
+	<node name="move_drone" pkg="hydro_landings" type="velocity_cmd"/>
+	<node name="searcher" pkg="hydro_landings" type="drone_search.py"/>
+</launch>

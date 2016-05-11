@@ -1,0 +1,13 @@
+Hi Rodolfo, 
+
+To make this work... 
+1) place this entire hydro_landings folder to your ~/catkin_ws/src/ folder; run a catkin_make 
+2) from hydro_landings/models, move ground_fiducials folder to ~/.gazebo/models (it's a hidden folder, so you may need to do View -> Show Hidden Files or just ctrl-h or command-h in your file explorer)
+3) the following, in the relevant terminals:
+- roscore
+- rosrun joy joy_node
+- rosrun ardrone_joystick ardrone_teleop
+- roslaunch hydro_landings test.launch
+- roslaunch hydro_landings markers.launch 
+
+
